@@ -3,6 +3,7 @@ package handlers
 import (
 	"encoding/json"
 	"net/http"
+	"strconv"
 	"time"
 
 	"github.com/gorilla/mux"
@@ -103,7 +104,36 @@ func SubmitRating(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(p)
 }
 
+func InitCard(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	cardID, err := strconv.ParseInt(vars["cardId"], 10, 64)
+	if err != nil {
+		http.Error(w, "Invalid ID", http.StatusBadRequest)
+		return
+	}
+
+	var p models.UserCardProgress
+	err = db.DB.QueryRow(`
+        INSERT INTO user_card_progress (card_id, repetition, easiness, interval_days, next_review_date)
+        VALUES ($1, 0, 2.5, 1, CURRENT_DATE)
+        RETURNING id, repetition, easiness, interval_days, next_review_date
+    `, cardID).Scan(
+		&p.ID, &p.Repetition, &p.Easiness, &p.IntervalDays, &p.NextReviewDate,
+	)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	p.CardID = cardID
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusCreated)
+	json.NewEncoder(w).Encode(p)
+}
+
 func RegisterSessionRoutes(r *mux.Router) {
 	r.HandleFunc("/api/session/due", GetDueCards).Methods("GET")
 	r.HandleFunc("/api/session/rate", SubmitRating).Methods("POST")
+	r.HandleFunc("/api/session/init/{cardId}", InitCard).Methods("POST")
 }
