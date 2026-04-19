@@ -2,7 +2,7 @@
 
 A full-stack flashcard app for German B1 exam preparation, built with spaced repetition (SM-2 algorithm).
 
-Built as a portfolio project to demonstrate the same REST API implemented in two backend languages.
+Built as a hobby project to demonstrate the same REST API implemented in two backend languages.
 
 ---
 
